@@ -2,7 +2,15 @@ import axios from 'axios';
 import utils from 'utils';
 
 export default class HttpProvider {
-    constructor(host, timeout = 30000, user = false, password = false, headers = {}, statusPage = '/') {
+    constructor(
+        host,
+        timeout = 30000,
+        user = false,
+        password = false,
+        headers = {},
+        statusPage = '/',
+        withCredentials = true
+    ) {
         if (!utils.isValidURL(host))
             throw new Error('Invalid URL provided to HttpProvider');
 
@@ -25,9 +33,10 @@ export default class HttpProvider {
             baseURL: host,
             timeout: timeout,
             headers: headers,
+            withCredentials: withCredentials,
             auth: user && {
                 user,
-                password
+                password,
             },
         });
     }
@@ -37,19 +46,26 @@ export default class HttpProvider {
     }
 
     async isConnected(statusPage = this.statusPage) {
-        return this.request(statusPage).then(data => {
-            return utils.hasProperties(data, 'blockID', 'block_header');
-        }).catch(() => false);
+        return this.request(statusPage)
+            .then((data) => {
+                return utils.hasProperties(data, 'blockID', 'block_header');
+            })
+            .catch(() => false);
     }
 
     request(url, payload = {}, method = 'get') {
         method = method.toLowerCase();
 
-        return this.instance.request({
-            data: method == 'post' && Object.keys(payload).length ? payload : null,
-            params: method == 'get' && payload,
-            url,
-            method
-        }).then(({data}) => data);
+        return this.instance
+            .request({
+                data:
+                    method == 'post' && Object.keys(payload).length
+                        ? payload
+                        : null,
+                params: method == 'get' && payload,
+                url,
+                method,
+            })
+            .then(({ data }) => data);
     }
-};
+}
